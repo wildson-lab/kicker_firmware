@@ -1,0 +1,10 @@
+18:08:26 **** Incremental Build of configuration Debug for project Kicker_I2C_G031FxPx ****
+make -j4 all 
+arm-none-eabi-size  Kicker_I2C_G031FxPx.elf 
+   text	   data	    bss	    dec	    hex	filename
+  29828	     20	   2108	  31956	   7cd4	Kicker_I2C_G031FxPx.elf
+Finished building: default.size.stdout
+ 
+
+18:08:26 Build Finished. 0 errors, 0 warnings. (took 128ms)
+

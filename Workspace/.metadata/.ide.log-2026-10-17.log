@@ -1,0 +1,6 @@
+2026-10-17 09:11:22,513 [INFO] Activator:176 - 
+
+
+2026-10-17 09:11:22,519 [INFO] Activator:177 - !SESSION log4j initialized
+2026-10-17 09:11:32,241 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] 
+2026-10-17 09:49:23,127 [ERROR] LogOutputStream:75 - [STDERR_REDIRECT] SWT SessionManagerDBus: Failed to UnregisterClient: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: Object does not exist at path “/org/gnome/SessionManager”

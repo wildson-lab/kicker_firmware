@@ -1,0 +1,10 @@
+2026-08-27 12:55:45,073 [INFO] Activator:176 - 
+
+
+2026-08-27 12:55:45,076 [INFO] Activator:177 - !SESSION log4j initialized
+2026-08-27 12:55:48,523 [INFO] LogOutputStream:77 - [STDOUT_REDIRECT] 
+2026-08-27 23:24:07,196 [ERROR] AdobePublisher:162 - Exception while opening the connection: java.net.SocketTimeoutException: Connect timed out
+2026-08-27 23:24:07,197 [ERROR] AdobePublisher:162 - Exception while opening the connection: java.net.SocketTimeoutException: Connect timed out
+2026-08-27 23:24:07,197 [ERROR] AdobePublisher:162 - Exception while opening the connection: java.net.SocketTimeoutException: Connect timed out
+2026-08-27 23:24:07,197 [ERROR] AdobePublisher:162 - Exception while opening the connection: java.net.SocketTimeoutException: Connect timed out
+2026-08-27 23:24:07,198 [ERROR] AdobePublisher:162 - Exception while opening the connection: java.net.SocketTimeoutException: Connect timed out
