@@ -34,7 +34,10 @@
 
 #define I2C_SLAVE_ADDR 0x27
 
-/* Mapa de Registradores do Kicker */
+/*
+ * Mapa de Registradores do Kicker
+ * Registradores de escrita e/ou leitura
+ * */
 #define REG_VERSION         0x00
 #define REG_BOARD_STATUS    0x01
 #define REG_FB_DUTY         0X02
@@ -45,12 +48,17 @@
 #define REG_VPRI_1          0x07
 #define REG_VPRI_2          0x08
 
+/*
+ * Registradores de comando
+ * */
 #define REG_BOARD_RESET     0xA0
 #define REG_CHARGE_ENABLE   0xA1
 #define REG_KICK_START      0xA2
 #define REG_BLEEDER_ENABLE  0xA3
 
-/* Mascaras de status da placa */
+/*
+ * Mascaras de status da placa
+ * */
 #define BOARD_STATUS_CHARGE               (1U << 0)
 #define BOARD_STATUS_KICK                 (1U << 1)
 #define BOARD_STATUS_BLEEDER              (1U << 2)
@@ -60,25 +68,46 @@
 #define BOARD_STATUS_I2C_LAST_REG_ERROR   (1U << 6)
 #define BOARD_STATUS_I2C_LAST_VALUE_ERROR (1U << 7)
 
-
-#define COMMAND_STOP  0x0000
-#define COMMAND_START 0x0001
-
-#define KICK_PWM_CCR_MAX 1000U;
-
-#define V_SEC_MAX           3500    /* Tensao de seguranca para o OV_TRIP */
-#define V_SEC_SET_MAX       1800    /* Tensao maxima permitida como setpoint */
-#define KICK_DURATION_MIN   10		/* Duracao minima do chute, em ms */
-#define KICK_DURATION_MAX   1000	/* Duracao maxima do chute, em ms */
-#define KICK_DUTY_MIN       50		/* Duty minimo do chute, em % */
-#define KICK_DUTY_MAX       1000	/* Duty maximno do chute, em % */
+/*
+ * Comandos de start e stop
+ * */
+#define COMMAND_STOP  0x00
+#define COMMAND_START 0x01
 
 
-#define FB_ADJ 378	                /* Calibração de zero do ADC */
-#define ADC_VSEC_CAL 0	            /* Calibração de zero do ADC */
+/*
+ * Limites dos registradores
+ * */
+#define V_SEC_SET_MIN       48U     /* Tensao minima permitida como setpoint */
+#define V_SEC_SET_MAX       180U    /* Tensao maxima permitida como setpoint */
+#define KICK_DURATION_MIN   1U	 	/* Duracao minima do chute, em ms */
+#define KICK_DURATION_MAX   255U	/* Duracao maxima do chute, em ms */
+#define KICK_DUTY_MIN       10U		/* Duty minimo do chute, em % */
+#define KICK_DUTY_MAX       100U	/* Duty maximno do chute, em % */
 
-#define PWM_FB_DUTY_SETPOINT 379
-#define PWM_FB_DUTY_MAX 999
+/*
+ * Limites internos de calculos
+ * */
+
+/*
+ * Medicao de tensao
+ */
+#define V_SEC_MAX           3500U   /* Tensao de seguranca para o OV_TRIP */
+#define ADC_VSEC_CAL        0U	    /* Calibração de zero do ADC */
+#define V_ANALOG_MAX_MV     3300U   /* Referencia tensao analogica, em mV */
+#define ANALOG_RESOLUTION   4095U   /* Resolucao do ADC */
+
+/*
+ * Feedback
+ */
+#define PWM_FB_DUTY_SETPOINT 369U   /* Duty na regiao de regulacao */
+#define PWM_FB_DUTY_MAX      1000U  /* CCR maximo do PWM do FB */
+
+/*
+ * Kick
+ */
+#define KICK_PWM_CCR_MAX    1000U  /* CCR maximo do PWM do kick */
+
 
 
 /* USER CODE END PD */
@@ -100,57 +129,46 @@ TIM_HandleTypeDef htim14;
 
 /* USER CODE BEGIN PV */
 
-uint8_t tx_buffer[2];
-
+uint8_t tx_byte;
 uint8_t rx_byte;
 uint8_t rx_bytes_count = 0;
 uint8_t reg_index;
-uint8_t value_msb;
-uint8_t value_lsb;
-
-volatile uint16_t board_version = 1;
-volatile uint16_t board_status = 0;
-volatile uint16_t v_sec = 0;
-volatile uint16_t v_sec_set= 0;
-volatile uint16_t fb_duty = 0;
-
-volatile uint16_t kick_duration = 100;
-volatile uint16_t kick_duty = 50;
-
-volatile uint16_t v_pri_1 = 0;
-volatile uint16_t v_pri_2 = 0;
-volatile uint16_t i_pri = 0;
 
 
-volatile uint16_t start_kick = 0;
-volatile uint16_t enable_charge = 0;
-volatile uint16_t enable_bleeder= 0;
+volatile uint8_t board_version = 1;
+volatile uint8_t board_status = 0;
+volatile uint8_t v_sec = 0;
+volatile uint8_t v_sec_set= 48;
+volatile uint8_t fb_duty = 0;
+
+volatile uint8_t kick_duration = 100;
+volatile uint8_t kick_duty = 50;
+
+volatile uint8_t v_pri_1 = 0;
+volatile uint8_t v_pri_2 = 0;
+volatile uint8_t i_pri = 0;
+
+
+volatile uint8_t start_kick = 0;
+volatile uint8_t enable_charge = 0;
+volatile uint8_t enable_bleeder= 0;
 
 volatile uint8_t has_update = 0;
 volatile uint8_t  reg_to_update = 0;
-volatile uint16_t value_to_update = 0;
+volatile uint8_t value_to_update = 0;
 
 
 volatile uint16_t adc_raw_vcap = 0;
+
+volatile uint16_t adc_raw_v_sec = 0;
+volatile uint32_t v_sec_adc_mv = 0;
+volatile uint32_t fb_duty_calc = 0;
+
 volatile uint8_t kick_finished = 0;
 
 
-volatile uint16_t * const read_registers[] =
-{
-	&board_version,
-	&board_status,
-	&v_sec,
-	&v_sec_set,
-	&fb_duty,
-	&kick_duration,
-	&kick_duty,
-	&v_pri_1,
-	&v_pri_2,
 
-};
-
-
-volatile uint16_t * const registers[] =
+volatile uint8_t * const registers[] =
 {
 	&board_version,
 	&board_status,
@@ -164,10 +182,12 @@ volatile uint16_t * const registers[] =
 	&i_pri
 };
 
+
+
 volatile uint16_t kick_pwm_ccr_max = 0;
 
 
-uint8_t read_reg_count = sizeof(read_registers) / sizeof(read_registers[0]);
+uint8_t read_reg_count = sizeof(registers) / sizeof(registers[0]);
 
 
 volatile uint8_t fault_pin_low = 0;
@@ -195,8 +215,8 @@ void Board_Bleeder_Disable();
 void Board_Kick_Start();
 void Board_Kick_Stop();
 void Board_Kick_Off();
-void Board_Kick_Set_PWM(uint16_t duty);
-void Board_Kick_Set_Pulse_Duration(uint16_t duration_ms);
+void Board_Kick_Set_PWM(uint8_t duty);
+void Board_Kick_Set_Pulse_Duration(uint8_t duration);
 void Board_Kick_Pulse_Stop();
 
 void Board_FB_Calculate();
@@ -302,10 +322,11 @@ void Board_Kick_Off()
  * PWM Modo 2 é invertido - CCR máximo é duty zero, e vice-versa.
  * Atualiza o CCR para o registrador ativo e limpa a flag de update.
  */
-void Board_Kick_Set_PWM(uint16_t duty)
+void Board_Kick_Set_PWM(uint8_t duty)
 {
 	/* Seta o registrador CCR */
-	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, kick_pwm_ccr_max - duty);
+	uint16_t ccr = (uint16_t)(kick_pwm_ccr_max - (duty * 10));
+	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, ccr);
 	__HAL_TIM_SET_COUNTER(&htim2, 0);
 
 	/* Atualiza o novo CCR para o registrador ativo no PWM*/
@@ -318,9 +339,9 @@ void Board_Kick_Set_PWM(uint16_t duty)
 /*
  * Configura o TIM3 para gerar um pulso com a duracao do chute.
  */
-void Board_Kick_Set_Pulse_Duration(uint16_t duration_ms)
+void Board_Kick_Set_Pulse_Duration(uint8_t duration)
 {
-   __HAL_TIM_SET_AUTORELOAD(&htim3, duration_ms - 1U);
+   __HAL_TIM_SET_AUTORELOAD(&htim3, duration);
    __HAL_TIM_SET_COUNTER(&htim3, 0);
    __HAL_TIM_CLEAR_FLAG(&htim3, TIM_FLAG_UPDATE);
 
@@ -340,40 +361,46 @@ void Board_Kick_Pulse_Stop()
 	 *
 	 */
     HAL_TIM_Base_Stop_IT(&htim3);
-    __HAL_TIM_SET_COUNTER(&htim3, 0);
+    __HAL_TIM_SET_COUNTER(&htim3, 0U);
     __HAL_TIM_CLEAR_FLAG(&htim3, TIM_FLAG_UPDATE);
 }
 
 void Board_FB_Calculate()
 {
-  fb_duty = ((v_sec * PWM_FB_DUTY_SETPOINT) / v_sec_set);
+	/* Se o setpoint for zero, mantém o feedback em Idle */
+    if (v_sec_set == 0)
+    {
+        Board_FB_Idle();
+        return;
+    }
 
-//  fb_duty = ((v_sec * PWM_FB_DUTY_SETPOINT) / v_sec_set) / 2;
+    /* Obtém o duty utilizado para calculos internos,
+     * com resolucao de 32 bits para evitar overflow. */
+	fb_duty_calc  = ((uint32_t)(v_sec_adc_mv * PWM_FB_DUTY_SETPOINT) / (uint32_t)(v_sec_set * 10));
 
-//	fb_duty = 250;
-
-
-  if (fb_duty > PWM_FB_DUTY_MAX)
-  {
-	  fb_duty = PWM_FB_DUTY_MAX;
-  }
-  __HAL_TIM_SET_COMPARE(&htim14, TIM_CHANNEL_1, fb_duty);
-
-
-  /* Atualiza o novo CCR para o registrador ativo no PWM*/
-	/* HAL_TIM_GenerateEvent(&htim14, TIM_EVENTSOURCE_UPDATE); */
-
-	/* Limpa a tag de atualização, pois não querenmos tratá-la */
-  /* __HAL_TIM_CLEAR_FLAG(&htim14, TIM_FLAG_UPDATE); */
+	/* Saturacao do duty maximo */
+	if (fb_duty_calc > PWM_FB_DUTY_MAX)
+	{
+	  fb_duty_calc = PWM_FB_DUTY_MAX;
+	}
 
 
+	/* Seta o CCR com o duty calculado */
+	__HAL_TIM_SET_COMPARE(
+			&htim14,
+			TIM_CHANNEL_1,
+			(uint16_t) fb_duty_calc
+			);
+
+	// Converte o duty para o registrador de 8 bits
+	fb_duty = (uint8_t)(fb_duty_calc / 10U);
 }
 
 
 void Board_FB_Idle()
 {
-	fb_duty = PWM_FB_DUTY_MAX;
-	__HAL_TIM_SET_COMPARE(&htim14, TIM_CHANNEL_1, fb_duty);
+	__HAL_TIM_SET_COMPARE(&htim14, TIM_CHANNEL_1, PWM_FB_DUTY_MAX);
+	fb_duty = 100;
 }
 
 
@@ -395,18 +422,24 @@ uint8_t Board_Status_Get_Flag(uint8_t flag_mask)
 
 void Board_Vsec_Calculate()
 {
-  v_sec = (adc_raw_vcap * 3300U) / 4095U;
+	/* Obtem a tensao no adc do secundario em mv,
+	 * utilizado nos calculos internos */
+	v_sec_adc_mv = ((uint32_t)adc_raw_v_sec * V_ANALOG_MAX_MV) / ANALOG_RESOLUTION;
+
+	// Converte para o v_sec de 8 bits, utilizado no I2C
+	v_sec = (v_sec_adc_mv > 2550) ? 255 : (uint8_t)(v_sec_adc_mv / 10);
+
 }
 
 void Board_OV_Trip_Verify()
 {
-  if (v_sec > V_SEC_MAX &&
-		  Board_Status_Get_Flag(BOARD_STATUS_OV_TRIP) == 0U
-		  )
-  {
-	  /* Ativa o trip por tensao alta */
-	  Board_Status_Set_Flag(BOARD_STATUS_OV_TRIP);
-  }
+	if ( v_sec_adc_mv > V_SEC_MAX &&
+			Board_Status_Get_Flag(BOARD_STATUS_OV_TRIP) == 0U
+			)
+	{
+	/* Ativa o trip por tensao alta */
+	Board_Status_Set_Flag(BOARD_STATUS_OV_TRIP);
+	}
 }
 
 
@@ -463,17 +496,18 @@ int main(void)
   __HAL_TIM_SET_COMPARE(&htim14, TIM_CHANNEL_1, 0);
   HAL_TIM_PWM_Start(&htim14, TIM_CHANNEL_1);
 
-  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
+
+  kick_pwm_ccr_max = __HAL_TIM_GET_AUTORELOAD(&htim2) + 1;
+  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, kick_pwm_ccr_max);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
 
   Board_Bleeder_Enable();
 
 
-  kick_pwm_ccr_max = __HAL_TIM_GET_AUTORELOAD(&htim2) + 1;
+  kick_duration = 100;
+  kick_duty = 100;
+  v_sec_set = 48;
 
-  kick_duration = 50;
-  kick_duty = 500;
-  v_sec_set = 500;
 
 //	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 
@@ -1045,17 +1079,19 @@ void HAL_I2C_AddrCallback(
 	/* Master quer ler no slave. */
 	else if (transfer_direction == I2C_DIRECTION_RECEIVE)
 	{
-		uint16_t value = 0;
+		tx_byte = 0;
 
-		if (reg_index <= read_reg_count)
+		if (reg_index < read_reg_count)
 		{
-			value = *read_registers[reg_index];
+			tx_byte = *registers[reg_index];
 		}
 
-		tx_buffer[0] = value >> 8;		// Byte alto, deslocado 8 bits para direita
-		tx_buffer[1] = value & 0xFF; 	// Byte baixo, considerando somente 8 bits da direita
-
-		HAL_I2C_Slave_Seq_Transmit_IT(hi2c, tx_buffer, 2, I2C_FIRST_AND_LAST_FRAME);
+		HAL_I2C_Slave_Seq_Transmit_IT(
+				hi2c,
+				&tx_byte,
+				1,
+				I2C_FIRST_AND_LAST_FRAME
+				);
 	}
 }
 
@@ -1075,23 +1111,15 @@ void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c)
     // Segundo byte: byte alto
     else if (rx_bytes_count == 1)
     {
-        value_msb = rx_byte;
-    }
-
-    // Terceiro byte: byte baixo; grava o uint16_t completo
-    else if (rx_bytes_count == 2)
-    {
-        value_lsb = rx_byte;
-
-		has_update = 1;
 		reg_to_update = reg_index;
-		value_to_update = ((uint16_t)value_msb << 8) | value_lsb;
+		value_to_update = rx_byte;
+		has_update = 1;
     }
 
     rx_bytes_count++;
 
     // Após receber os três bytes, volta a esperar uma nova escrita.
-    if (rx_bytes_count >= 3)
+    if (rx_bytes_count >= 2)
     {
         rx_bytes_count = 0;
     }
